@@ -23,7 +23,7 @@ def score_and_synthesize(
     text = llm_client.complete(
         PASS5_SYSTEM,
         pass5_user(request_dict, pass1, pass2, pass3, pass4, all_nodes),
-        max_tokens=4096,
+        max_tokens=8192,
     )
     synthesis = parse_llm_json(text, "risk scoring and synthesis")
 

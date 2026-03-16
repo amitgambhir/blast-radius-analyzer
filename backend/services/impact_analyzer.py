@@ -15,7 +15,7 @@ def analyze_first_order(
     text = llm_client.complete(
         PASS2_SYSTEM,
         pass2_user(request_dict, pass1_output, first_order_services, graph_data),
-        max_tokens=4096,
+        max_tokens=8192,
     )
     return parse_llm_json(text, "first-order impact analysis")
 
@@ -30,6 +30,6 @@ def analyze_second_order(
     text = llm_client.complete(
         PASS3_SYSTEM,
         pass3_user(request_dict, pass1_output, pass2_output, second_order_services),
-        max_tokens=4096,
+        max_tokens=8192,
     )
     return parse_llm_json(text, "second-order impact analysis")

@@ -15,6 +15,6 @@ def map_org_impact(
     text = llm_client.complete(
         PASS4_SYSTEM,
         pass4_user(request_dict, pass1_output, pass2_output, pass3_output),
-        max_tokens=4096,
+        max_tokens=8192,
     )
     return parse_llm_json(text, "organizational impact analysis")
