@@ -6,7 +6,7 @@ const ASCII_PIPELINE = `  BlastRadiusRequest
          ▼
   ┌─────────────┐
   │   Pass 1    │  Decision Classification
-  │  (Claude)   │  → decision_class, primary_risk,
+  │    (AI)     │  → decision_class, primary_risk,
   └──────┬──────┘    playbook_notes
          │
          ▼
@@ -19,25 +19,25 @@ const ASCII_PIPELINE = `  BlastRadiusRequest
          ▼
   ┌─────────────┐
   │   Pass 2    │  First-Order Technical Impact
-  │  (Claude)   │  → ImpactNode[] per neighbor
+  │    (AI)     │  → ImpactNode[] per neighbor
   └──────┬──────┘    grounded in real graph
          │
          ▼
   ┌─────────────┐
   │   Pass 3    │  Second-Order Propagation
-  │  (Claude)   │  → dampened vs amplified
+  │    (AI)     │  → dampened vs amplified
   └──────┬──────┘
          │
          ▼
   ┌─────────────┐
   │   Pass 4    │  Organizational Impact
-  │  (Claude)   │  → team workload, SLA risk,
+  │    (AI)     │  → team workload, SLA risk,
   └──────┬──────┘    roadmap disruption
          │
          ▼
   ┌─────────────┐
   │   Pass 5    │  Risk Scoring & Synthesis
-  │  (Claude)   │  → BlastRadiusResult
+  │    (AI)     │  → BlastRadiusResult
   └──────┬──────┘
          │
          ▼
@@ -85,9 +85,9 @@ function HowItWorks() {
   return (
     <div className="space-y-5 text-sm">
       <div>
-        <h3 className="text-base font-semibold text-text-primary mb-2">5-Pass Multi-Model Reasoning Chain</h3>
+        <h3 className="text-base font-semibold text-text-primary mb-2">5-Pass AI Reasoning Chain</h3>
         <p className="text-text-secondary leading-relaxed">
-          Each analysis runs five sequential Claude passes. Every pass receives the structured JSON output of all previous passes as context. Pass 5 has seen everything Passes 1–4 found. This produces dramatically better output than a single mega-prompt.
+          Each analysis runs five sequential model passes. Every pass receives the structured JSON output of all previous passes as context. Pass 5 has seen everything Passes 1–4 found. This produces dramatically better output than a single mega-prompt.
         </p>
       </div>
 
@@ -103,11 +103,11 @@ function HowItWorks() {
           },
           {
             n: 2, name: 'First-Order Impact (Graph-Traversal Assisted)',
-            desc: 'NetworkX builds a real nx.DiGraph from intake data. get_first_order() computes all 1-hop neighbors algorithmically. Claude then reasons about the specific technical impact on each neighbor — the LLM interprets a real graph structure, not guesses at dependencies.',
+            desc: 'NetworkX builds a real nx.DiGraph from intake data. get_first_order() computes all 1-hop neighbors algorithmically. The model then reasons about the specific technical impact on each neighbor — interpreting a real graph structure, not guessing at dependencies.',
           },
           {
             n: 3, name: 'Second-Order Propagation',
-            desc: 'get_second_order() extends traversal to 2-hop neighbors. Claude reasons about whether each impact signal is dampened (soft/async dependency) or amplified (hard/sync dependency) as it propagates.',
+            desc: 'get_second_order() extends traversal to 2-hop neighbors. The model reasons about whether each impact signal is dampened (soft/async dependency) or amplified (hard/sync dependency) as it propagates.',
           },
           {
             n: 4, name: 'Organizational Impact Mapping',
@@ -131,7 +131,7 @@ function HowItWorks() {
       <div className="bg-surface border border-border rounded-lg p-4">
         <h4 className="font-semibold text-text-primary mb-2 text-sm">Why NetworkX?</h4>
         <p className="text-text-secondary text-xs leading-relaxed">
-          The dependency graph is a real <code className="font-mono text-accent bg-bg px-1 py-0.5 rounded">nx.DiGraph</code>. Hop-distance propagation, betweenness centrality, and dependency strength weighting are computed algorithmically before Claude reasons about them. This is not the LLM guessing — it is graph traversal producing structured input that the LLM interprets. In production, a Terraform graph parser or Datadog service map replaces the intake form. The traversal code is identical.
+          The dependency graph is a real <code className="font-mono text-accent bg-bg px-1 py-0.5 rounded">nx.DiGraph</code>. Hop-distance propagation, betweenness centrality, and dependency strength weighting are computed algorithmically before the model reasons about them. This is not the model guessing — it is graph traversal producing structured input that the model interprets. In production, a Terraform graph parser or Datadog service map replaces the intake form. The traversal code is identical.
         </p>
       </div>
     </div>
@@ -197,8 +197,8 @@ function PocVsProduction() {
             },
             {
               n: '3',
-              title: 'NetworkX computes impact propagation before Claude reasons about it',
-              desc: 'Before Claude touches second-order impacts, the system has already computed which services are 1 and 2 hops away. The LLM interprets a real graph structure.',
+              title: 'NetworkX computes impact propagation before the model reasons about it',
+              desc: 'Before the model touches second-order impacts, the system has already computed which services are 1 and 2 hops away. The model interprets a real graph structure.',
             },
           ].map(({ n, title, desc }) => (
             <div key={n} className="flex gap-3 bg-surface border border-border rounded-lg p-3">
