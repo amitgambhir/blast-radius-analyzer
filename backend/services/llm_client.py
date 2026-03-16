@@ -43,7 +43,7 @@ def _get_model(provider: str) -> str:
 
 
 def get_timeout_seconds() -> float:
-    raw_timeout = os.environ.get("LLM_TIMEOUT_SECONDS", "60")
+    raw_timeout = os.environ.get("LLM_TIMEOUT_SECONDS", "120")
     try:
         timeout = float(raw_timeout)
     except ValueError:
