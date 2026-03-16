@@ -82,7 +82,6 @@ def test_centrality(sample_services, sample_deps):
 
 
 def test_get_services_by_ids(sample_services, sample_deps):
-    G = build_graph(sample_services, sample_deps)
     result = get_services_by_ids(sample_services, {"auth", "profile"})
     ids = [s["id"] for s in result]
     assert "auth" in ids

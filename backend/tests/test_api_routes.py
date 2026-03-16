@@ -355,12 +355,6 @@ def test_analyze_stream_emits_sse_events():
     assert "result" in event_types
     assert "complete" in event_types
 
-    # Progress events for all 5 passes
-    progress_passes = [
-        json.loads(line[6:])["pass"]
-        for line in []  # already consumed above — check counts
-    ]
-
     result_events = [t for t in event_types if t == "result"]
     assert len(result_events) == 1
 
