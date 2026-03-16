@@ -3,6 +3,7 @@ NetworkX graph builder and traversal utilities.
 Builds a real directed dependency graph from intake data.
 The traversal logic is production-ready — only the data source changes in production.
 """
+
 from typing import List, Set
 import networkx as nx
 

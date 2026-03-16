@@ -2,6 +2,7 @@
 Tests for all 3 example scenarios — validating the data model and graph traversal
 without calling the Claude API.
 """
+
 import sys
 import os
 
@@ -17,7 +18,9 @@ from services.graph_builder import (
 )
 
 
-@pytest.mark.parametrize("example_id", ["db-migration", "api-deprecation", "platform-reorg"])
+@pytest.mark.parametrize(
+    "example_id", ["db-migration", "api-deprecation", "platform-reorg"]
+)
 def test_example_loads(example_id):
     """All 3 examples must be present and parseable."""
     assert example_id in EXAMPLES
@@ -28,7 +31,9 @@ def test_example_loads(example_id):
     assert req.decision.title
 
 
-@pytest.mark.parametrize("example_id", ["db-migration", "api-deprecation", "platform-reorg"])
+@pytest.mark.parametrize(
+    "example_id", ["db-migration", "api-deprecation", "platform-reorg"]
+)
 def test_example_graph_builds(example_id):
     """Graph must build from each example without errors."""
     req = EXAMPLES[example_id]
@@ -37,7 +42,9 @@ def test_example_graph_builds(example_id):
     assert G.number_of_edges() == len(req.dependencies)
 
 
-@pytest.mark.parametrize("example_id", ["db-migration", "api-deprecation", "platform-reorg"])
+@pytest.mark.parametrize(
+    "example_id", ["db-migration", "api-deprecation", "platform-reorg"]
+)
 def test_example_service_ids_are_valid(example_id):
     """All dependency service IDs must reference existing services."""
     req = EXAMPLES[example_id]
@@ -51,7 +58,9 @@ def test_example_service_ids_are_valid(example_id):
         )
 
 
-@pytest.mark.parametrize("example_id", ["db-migration", "api-deprecation", "platform-reorg"])
+@pytest.mark.parametrize(
+    "example_id", ["db-migration", "api-deprecation", "platform-reorg"]
+)
 def test_example_team_ownership_is_valid(example_id):
     """All team-owned service IDs must reference existing services."""
     req = EXAMPLES[example_id]
@@ -63,7 +72,9 @@ def test_example_team_ownership_is_valid(example_id):
             )
 
 
-@pytest.mark.parametrize("example_id", ["db-migration", "api-deprecation", "platform-reorg"])
+@pytest.mark.parametrize(
+    "example_id", ["db-migration", "api-deprecation", "platform-reorg"]
+)
 def test_example_affected_services_exist(example_id):
     """Decision affected_services must all reference existing services."""
     req = EXAMPLES[example_id]
@@ -75,6 +86,7 @@ def test_example_affected_services_exist(example_id):
 
 
 # ── DB Migration specific ────────────────────────────────────────────────────
+
 
 def test_db_migration_critical_services():
     """auth-service and session-manager should be critical in db-migration."""
@@ -95,8 +107,12 @@ def test_db_migration_first_order_graph():
     G = build_graph(req.services, req.dependencies)
     first = get_first_order(G, ["auth-service"])
     assert "api-gateway" in first, "api-gateway calls auth-service, must be first-order"
-    assert "session-manager" in first, "session-manager calls auth-service, must be first-order"
-    assert "user-profile-service" in first, "auth-service calls user-profile-service, must be first-order"
+    assert "session-manager" in first, (
+        "session-manager calls auth-service, must be first-order"
+    )
+    assert "user-profile-service" in first, (
+        "auth-service calls user-profile-service, must be first-order"
+    )
 
 
 def test_db_migration_second_order_graph():
@@ -108,7 +124,9 @@ def test_db_migration_second_order_graph():
     G = build_graph(req.services, req.dependencies)
     affected = ["auth-service"]
     first = get_first_order(G, affected)
-    assert "user-profile-service" in first, "user-profile-service must be first-order from auth-service"
+    assert "user-profile-service" in first, (
+        "user-profile-service must be first-order from auth-service"
+    )
     second = get_second_order(G, affected, first)
     assert "notification-service" in second, (
         "notification-service is async-event consumer of user-profile-service, must be second-order"
@@ -130,11 +148,13 @@ def test_db_migration_auth_is_hub():
 
 # ── API Deprecation specific ─────────────────────────────────────────────────
 
+
 def test_api_deprecation_payments_v1_has_hard_consumers():
     """payments-v1 must have hard-dependency consumers (checkout, billing, mobile, partner)."""
     req = EXAMPLES["api-deprecation"]
     hard_consumers = {
-        d.from_service for d in req.dependencies
+        d.from_service
+        for d in req.dependencies
         if d.to_service == "payments-v1" and d.strength == "hard"
     }
     assert "checkout-service" in hard_consumers
@@ -148,10 +168,13 @@ def test_api_deprecation_first_order_is_wide():
     req = EXAMPLES["api-deprecation"]
     G = build_graph(req.services, req.dependencies)
     first = get_first_order(G, ["payments-v1"])
-    assert len(first) >= 4, f"Expected 4+ first-order services, got {len(first)}: {first}"
+    assert len(first) >= 4, (
+        f"Expected 4+ first-order services, got {len(first)}: {first}"
+    )
 
 
 # ── Platform Reorg specific ──────────────────────────────────────────────────
+
 
 def test_platform_reorg_no_code_changes():
     """Platform reorg is decision_type='reorg', not 'migration' or 'architecture'."""
@@ -176,5 +199,9 @@ def test_platform_reorg_product_services_are_second_order():
     first = get_first_order(G, affected)
     second = get_second_order(G, affected, first)
     reachable = set(affected) | first | second
-    assert "auth-service" in reachable, "auth-service must be reachable from platform services"
-    assert "payments-core" in reachable, "payments-core must be reachable from platform services"
+    assert "auth-service" in reachable, (
+        "auth-service must be reachable from platform services"
+    )
+    assert "payments-core" in reachable, (
+        "payments-core must be reachable from platform services"
+    )

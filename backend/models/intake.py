@@ -36,8 +36,13 @@ class Decision(BaseModel):
     title: str = Field(min_length=1, max_length=MAX_NAME_LENGTH)
     description: str = Field(min_length=1, max_length=MAX_TEXT_LENGTH)
     decision_type: Literal[
-        "architecture", "migration", "deprecation", "reorg",
-        "vendor", "api-change", "infrastructure"
+        "architecture",
+        "migration",
+        "deprecation",
+        "reorg",
+        "vendor",
+        "api-change",
+        "infrastructure",
     ]
     affected_services: List[str] = Field(default_factory=list, max_length=MAX_SERVICES)
     timeline: Literal["immediate", "weeks", "months", "quarters"]
@@ -46,7 +51,9 @@ class Decision(BaseModel):
 
 class BlastRadiusRequest(BaseModel):
     services: List[Service] = Field(default_factory=list, max_length=MAX_SERVICES)
-    dependencies: List[Dependency] = Field(default_factory=list, max_length=MAX_DEPENDENCIES)
+    dependencies: List[Dependency] = Field(
+        default_factory=list, max_length=MAX_DEPENDENCIES
+    )
     teams: List[Team] = Field(default_factory=list, max_length=MAX_TEAMS)
     decision: Decision
     additional_context: Optional[str] = Field(default=None, max_length=MAX_TEXT_LENGTH)
@@ -59,7 +66,10 @@ class BlastRadiusRequest(BaseModel):
             raise ValueError("Service ids must be unique.")
 
         for dependency in self.dependencies:
-            if dependency.from_service not in service_ids or dependency.to_service not in service_ids:
+            if (
+                dependency.from_service not in service_ids
+                or dependency.to_service not in service_ids
+            ):
                 raise ValueError("Dependencies must reference declared services.")
 
         for team in self.teams:

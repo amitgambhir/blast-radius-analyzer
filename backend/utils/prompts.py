@@ -2,6 +2,7 @@
 All Claude prompts for the 5-pass blast radius analysis engine.
 Isolated here for easy tuning and documentation.
 """
+
 import json
 
 SYSTEM_BASE = """You are a senior engineering architect and risk analyst specializing in blast radius analysis — mapping the second and third-order impacts of engineering decisions before they are made.
@@ -15,10 +16,13 @@ CRITICAL RULE: Return ONLY valid JSON. No markdown code fences. No preamble. No 
 # PASS 1 — Decision Classification
 # ─────────────────────────────────────────────
 
-PASS1_SYSTEM = SYSTEM_BASE + """
+PASS1_SYSTEM = (
+    SYSTEM_BASE
+    + """
 
 Pass 1 — Decision Classification
 Classify the decision type, identify the primary risk category, and determine which analysis approach to apply. Your output will be used as context for all subsequent passes."""
+)
 
 
 def pass1_user(req: dict) -> str:
@@ -28,17 +32,17 @@ def pass1_user(req: dict) -> str:
     return f"""Analyze and classify this engineering decision.
 
 DECISION:
-Title: {d['title']}
-Type: {d['decision_type']}
-Description: {d['description']}
-Timeline: {d['timeline']}
-Reversibility: {d['reversibility']}
-Directly affected services: {d['affected_services']}
+Title: {d["title"]}
+Type: {d["decision_type"]}
+Description: {d["description"]}
+Timeline: {d["timeline"]}
+Reversibility: {d["reversibility"]}
+Directly affected services: {d["affected_services"]}
 
 SYSTEM CONTEXT:
 Services: {_j(services_summary)}
 Teams: {_j(teams_summary)}
-Additional context: {req.get('additional_context') or 'None provided'}
+Additional context: {req.get("additional_context") or "None provided"}
 
 Return exactly this JSON structure:
 {{
@@ -56,11 +60,14 @@ Return exactly this JSON structure:
 # PASS 2 — First-Order Impact
 # ─────────────────────────────────────────────
 
-PASS2_SYSTEM = SYSTEM_BASE + """
+PASS2_SYSTEM = (
+    SYSTEM_BASE
+    + """
 
 Pass 2 — First-Order Technical Impact Analysis
 Analyze the direct (1-hop) technical impacts on services immediately connected to the affected services.
 NetworkX graph traversal has already computed which services are 1 hop away. You are reasoning about the specific impact on each."""
+)
 
 
 def _trim_svc(s: dict, desc_limit: int = 300) -> dict:
@@ -75,17 +82,19 @@ def pass2_user(req: dict, pass1: dict, first_order_svcs: list, graph_data: dict)
     affected_details = [_trim_svc(s) for s in req["services"] if s["id"] in affected]
     first_order_svcs = [_trim_svc(s) for s in first_order_svcs]
     relevant_deps = [
-        d for d in req["dependencies"]
-        if d["from_service"] in affected or d["to_service"] in affected
+        d
+        for d in req["dependencies"]
+        if d["from_service"] in affected
+        or d["to_service"] in affected
         or d["from_service"] in {s["id"] for s in first_order_svcs}
         or d["to_service"] in {s["id"] for s in first_order_svcs}
     ]
     return f"""Analyze first-order technical impacts.
 
 PASS 1 FINDINGS:
-Class: {pass1.get('decision_class')}
-Primary risk: {pass1.get('primary_risk_category')}
-Key concerns: {_j(pass1.get('key_concerns', []))}
+Class: {pass1.get("decision_class")}
+Primary risk: {pass1.get("primary_risk_category")}
+Key concerns: {_j(pass1.get("key_concerns", []))}
 
 DIRECTLY AFFECTED SERVICES (the decision targets):
 {_j(affected_details)}
@@ -96,9 +105,9 @@ FIRST-ORDER NEIGHBORS (1-hop, computed by NetworkX graph traversal):
 RELEVANT DEPENDENCIES:
 {_j(relevant_deps)}
 
-DECISION DESCRIPTION: {req['decision']['description']}
-TIMELINE: {req['decision']['timeline']} | REVERSIBILITY: {req['decision']['reversibility']}
-ADDITIONAL CONTEXT: {req.get('additional_context') or 'None'}
+DECISION DESCRIPTION: {req["decision"]["description"]}
+TIMELINE: {req["decision"]["timeline"]} | REVERSIBILITY: {req["decision"]["reversibility"]}
+ADDITIONAL CONTEXT: {req.get("additional_context") or "None"}
 
 For each directly affected service AND each first-order neighbor, analyze the specific technical impact.
 Set is_inferred=false for services explicitly listed in the intake.
@@ -140,36 +149,46 @@ Return exactly this JSON structure:
 # PASS 3 — Second-Order Propagation
 # ─────────────────────────────────────────────
 
-PASS3_SYSTEM = SYSTEM_BASE + """
+PASS3_SYSTEM = (
+    SYSTEM_BASE
+    + """
 
 Pass 3 — Second-Order Propagation Analysis
 Analyze how first-order impacts propagate to second-order services (2 hops from affected services).
 Reason about whether each impact signal is dampened (soft/async) or amplified (hard/sync) as it travels."""
+)
 
 
 def pass3_user(req: dict, pass1: dict, pass2: dict, second_order_svcs: list) -> str:
     high_sev = [
         i["id"] + ": " + i.get("impact_description", "")[:80]
-        for i in (pass2.get("directly_affected_impacts", []) + pass2.get("first_order_impacts", []))
+        for i in (
+            pass2.get("directly_affected_impacts", [])
+            + pass2.get("first_order_impacts", [])
+        )
         if i.get("risk_severity") in ("critical", "high")
     ]
     second_order_svcs = [_trim_svc(s) for s in second_order_svcs]
     second_order_ids = {s["id"] for s in second_order_svcs}
     first_order_ids = {
         i["id"]
-        for i in (pass2.get("directly_affected_impacts", []) + pass2.get("first_order_impacts", []))
+        for i in (
+            pass2.get("directly_affected_impacts", [])
+            + pass2.get("first_order_impacts", [])
+        )
     }
     relevant_ids = second_order_ids | first_order_ids
     relevant_deps = [
-        d for d in req["dependencies"]
+        d
+        for d in req["dependencies"]
         if d["from_service"] in relevant_ids or d["to_service"] in relevant_ids
     ]
     return f"""Analyze second-order impact propagation.
 
-PASS 1: {pass1.get('decision_class')} — {pass1.get('primary_risk_category')} risk
+PASS 1: {pass1.get("decision_class")} — {pass1.get("primary_risk_category")} risk
 PASS 2 HIGH-SEVERITY FIRST-ORDER IMPACTS:
 {_j(high_sev)}
-PASS 2 SUMMARY: {pass2.get('pass2_summary', '')}
+PASS 2 SUMMARY: {pass2.get("pass2_summary", "")}
 
 SECOND-ORDER SERVICES (2-hop, computed by NetworkX):
 {_j(second_order_svcs)}
@@ -177,8 +196,8 @@ SECOND-ORDER SERVICES (2-hop, computed by NetworkX):
 RELEVANT DEPENDENCIES (involving first- or second-order services):
 {_j(relevant_deps)}
 
-DECISION: {req['decision']['title']}
-TIMELINE: {req['decision']['timeline']}
+DECISION: {req["decision"]["title"]}
+TIMELINE: {req["decision"]["timeline"]}
 
 For each second-order service: which first-order service carries the impact here, is it dampened or amplified, and what is the specific mechanism?
 
@@ -215,12 +234,15 @@ Return exactly this JSON structure:
 # PASS 4 — Organizational Impact
 # ─────────────────────────────────────────────
 
-PASS4_SYSTEM = SYSTEM_BASE + """
+PASS4_SYSTEM = (
+    SYSTEM_BASE
+    + """
 
 Pass 4 — Organizational Impact Mapping
 This is the differentiator pass. Most tools stop at technical impact.
 Map technical impacts to human and organizational impacts: team workload, roadmap disruption, SLA risks, stakeholder commitments, communication overhead, morale.
 Be specific about which teams are affected and how. This is what a Staff Engineer or Engineering Manager actually needs to know."""
+)
 
 
 def pass4_user(req: dict, pass1: dict, pass2: dict, pass3: dict) -> str:
@@ -235,17 +257,17 @@ def pass4_user(req: dict, pass1: dict, pass2: dict, pass3: dict) -> str:
     ]
     return f"""Map technical impacts to organizational impacts.
 
-DECISION: {req['decision']['title']}
-TYPE: {req['decision']['decision_type']} | TIMELINE: {req['decision']['timeline']} | REVERSIBILITY: {req['decision']['reversibility']}
+DECISION: {req["decision"]["title"]}
+TYPE: {req["decision"]["decision_type"]} | TIMELINE: {req["decision"]["timeline"]} | REVERSIBILITY: {req["decision"]["reversibility"]}
 
 TEAMS (with ownership):
-{_j(req['teams'])}
+{_j(req["teams"])}
 
 HIGH-SEVERITY TECHNICAL IMPACTS ON SERVICES: {_j(list(set(high_sev_svcs)))}
-PASS 1 KEY CONCERNS: {_j(pass1.get('key_concerns', []))}
-PASS 3 PROPAGATION PATTERNS: {_j(pass3.get('propagation_patterns', []))}
+PASS 1 KEY CONCERNS: {_j(pass1.get("key_concerns", []))}
+PASS 3 PROPAGATION PATTERNS: {_j(pass3.get("propagation_patterns", []))}
 
-ADDITIONAL CONTEXT: {req.get('additional_context') or 'None provided'}
+ADDITIONAL CONTEXT: {req.get("additional_context") or "None provided"}
 
 For each team: analyze workload impact, roadmap disruption, SLA risk, and stakeholder commitments.
 Also identify process impacts and any external stakeholder impacts.
@@ -303,46 +325,55 @@ Return exactly this JSON structure:
 # PASS 5 — Risk Scoring and Synthesis
 # ─────────────────────────────────────────────
 
-PASS5_SYSTEM = SYSTEM_BASE + """
+PASS5_SYSTEM = (
+    SYSTEM_BASE
+    + """
 
 Pass 5 — Risk Scoring and Synthesis
 Synthesize all previous pass findings into a complete risk assessment.
 Score each dimension 0.0–1.0. Compute overall risk score. Write an executive summary a VP Engineering can act on.
 Generate specific immediate actions and open questions. Be direct and concrete — no generic advice."""
+)
 
 
-def pass5_user(req: dict, pass1: dict, pass2: dict, pass3: dict, pass4: dict, all_nodes: list) -> str:
+def pass5_user(
+    req: dict, pass1: dict, pass2: dict, pass3: dict, pass4: dict, all_nodes: list
+) -> str:
     direct_critical = [
-        i["id"] for i in (pass2.get("directly_affected_impacts", []) + pass2.get("first_order_impacts", []))
+        i["id"]
+        for i in (
+            pass2.get("directly_affected_impacts", [])
+            + pass2.get("first_order_impacts", [])
+        )
         if i.get("risk_severity") == "critical"
     ]
     return f"""Synthesize all analysis passes into a complete risk assessment.
 
-DECISION: {req['decision']['title']}
-TYPE: {req['decision']['decision_type']} | TIMELINE: {req['decision']['timeline']} | REVERSIBILITY: {req['decision']['reversibility']}
+DECISION: {req["decision"]["title"]}
+TYPE: {req["decision"]["decision_type"]} | TIMELINE: {req["decision"]["timeline"]} | REVERSIBILITY: {req["decision"]["reversibility"]}
 
 PASS 1 — Classification:
-  Class: {pass1.get('decision_class')}
-  Primary risk: {pass1.get('primary_risk_category')}
-  Blast radius prediction: {pass1.get('blast_radius_prediction')}
-  Key concerns: {_j(pass1.get('key_concerns', []))}
+  Class: {pass1.get("decision_class")}
+  Primary risk: {pass1.get("primary_risk_category")}
+  Blast radius prediction: {pass1.get("blast_radius_prediction")}
+  Key concerns: {_j(pass1.get("key_concerns", []))}
 
 PASS 2 — First-Order:
-  Summary: {pass2.get('pass2_summary')}
+  Summary: {pass2.get("pass2_summary")}
   Critical services: {_j(direct_critical)}
 
 PASS 3 — Second-Order:
-  Summary: {pass3.get('pass3_summary')}
-  Patterns: {_j([p.get('pattern', '') for p in pass3.get('propagation_patterns', [])])}
+  Summary: {pass3.get("pass3_summary")}
+  Patterns: {_j([p.get("pattern", "") for p in pass3.get("propagation_patterns", [])])}
 
 PASS 4 — Org Impact:
-  Summary: {pass4.get('pass4_summary')}
-  Overhead: {pass4.get('communication_overhead')}
-  Teams impacted: {_j([t['id'] for t in pass4.get('team_impacts', [])])}
-  External: {_j([e['name'] for e in pass4.get('external_impacts', [])])}
+  Summary: {pass4.get("pass4_summary")}
+  Overhead: {pass4.get("communication_overhead")}
+  Teams impacted: {_j([t["id"] for t in pass4.get("team_impacts", [])])}
+  External: {_j([e["name"] for e in pass4.get("external_impacts", [])])}
 
 TOTAL NODES: {len(all_nodes)}
-ADDITIONAL CONTEXT: {req.get('additional_context') or 'None'}
+ADDITIONAL CONTEXT: {req.get("additional_context") or "None"}
 
 Score dimensions 0.0–1.0: 0.0–0.3=LOW, 0.31–0.5=MODERATE, 0.51–0.75=HIGH, 0.76–1.0=CRITICAL
 

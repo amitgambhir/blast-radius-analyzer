@@ -20,6 +20,7 @@ Configuration (via environment variables):
   Legacy variable still honoured for backwards compatibility:
     CLAUDE_MODEL       treated as LLM_MODEL when LLM_MODEL is not set
 """
+
 import concurrent.futures
 import os
 
@@ -58,6 +59,7 @@ def _get_client(provider: str):
 
     if provider == "anthropic":
         import anthropic  # type: ignore
+
         _client = anthropic.Anthropic(
             api_key=os.environ.get("ANTHROPIC_API_KEY"),
             timeout=get_timeout_seconds(),
@@ -81,8 +83,7 @@ def _get_client(provider: str):
 
     else:
         raise ValueError(
-            f"Unknown LLM_PROVIDER: {provider!r}. "
-            "Valid values: anthropic, openai"
+            f"Unknown LLM_PROVIDER: {provider!r}. Valid values: anthropic, openai"
         )
 
     return _client
@@ -106,7 +107,9 @@ def complete(system: str, user: str, max_tokens: int = 2048) -> str:
     model = _get_model(provider)
     llm = _get_client(provider)
 
-    future = _executor.submit(_complete_request, provider, model, llm, system, user, max_tokens)
+    future = _executor.submit(
+        _complete_request, provider, model, llm, system, user, max_tokens
+    )
 
     try:
         return future.result(timeout=get_timeout_seconds())
@@ -127,7 +130,9 @@ def complete(system: str, user: str, max_tokens: int = 2048) -> str:
         raise
 
 
-def _complete_request(provider: str, model: str, llm, system: str, user: str, max_tokens: int) -> str:
+def _complete_request(
+    provider: str, model: str, llm, system: str, user: str, max_tokens: int
+) -> str:
     if provider == "anthropic":
         message = llm.messages.create(
             model=model,

@@ -1,4 +1,5 @@
 """Unit tests for the NetworkX graph builder and traversal utilities."""
+
 import sys
 import os
 
@@ -18,21 +19,71 @@ from services.graph_builder import (
 @pytest.fixture
 def sample_services():
     return [
-        Service(id="auth", name="Auth Service", owner_team="platform", criticality="critical", description="Auth"),
-        Service(id="profile", name="Profile Service", owner_team="product", criticality="high", description="Profile"),
-        Service(id="gateway", name="API Gateway", owner_team="devex", criticality="high", description="Gateway"),
-        Service(id="notify", name="Notification Service", owner_team="devex", criticality="medium", description="Notify"),
-        Service(id="billing", name="Billing Service", owner_team="payments", criticality="high", description="Billing"),
+        Service(
+            id="auth",
+            name="Auth Service",
+            owner_team="platform",
+            criticality="critical",
+            description="Auth",
+        ),
+        Service(
+            id="profile",
+            name="Profile Service",
+            owner_team="product",
+            criticality="high",
+            description="Profile",
+        ),
+        Service(
+            id="gateway",
+            name="API Gateway",
+            owner_team="devex",
+            criticality="high",
+            description="Gateway",
+        ),
+        Service(
+            id="notify",
+            name="Notification Service",
+            owner_team="devex",
+            criticality="medium",
+            description="Notify",
+        ),
+        Service(
+            id="billing",
+            name="Billing Service",
+            owner_team="payments",
+            criticality="high",
+            description="Billing",
+        ),
     ]
 
 
 @pytest.fixture
 def sample_deps():
     return [
-        Dependency(from_service="gateway", to_service="auth", dependency_type="sync-api", strength="hard"),
-        Dependency(from_service="auth", to_service="profile", dependency_type="database", strength="hard"),
-        Dependency(from_service="notify", to_service="profile", dependency_type="async-event", strength="soft"),
-        Dependency(from_service="billing", to_service="auth", dependency_type="sync-api", strength="hard"),
+        Dependency(
+            from_service="gateway",
+            to_service="auth",
+            dependency_type="sync-api",
+            strength="hard",
+        ),
+        Dependency(
+            from_service="auth",
+            to_service="profile",
+            dependency_type="database",
+            strength="hard",
+        ),
+        Dependency(
+            from_service="notify",
+            to_service="profile",
+            dependency_type="async-event",
+            strength="soft",
+        ),
+        Dependency(
+            from_service="billing",
+            to_service="auth",
+            dependency_type="sync-api",
+            strength="hard",
+        ),
     ]
 
 

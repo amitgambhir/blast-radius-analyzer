@@ -3,6 +3,7 @@ High-level API route tests using FastAPI's TestClient.
 LLM calls are mocked at the llm_client.complete level so these run without
 any API key and are provider-agnostic.
 """
+
 import concurrent.futures
 import sys
 import os
@@ -20,6 +21,7 @@ client = TestClient(app)
 
 # ── Health ───────────────────────────────────────────────────────────────────
 
+
 def test_health():
     r = client.get("/health")
     assert r.status_code == 200
@@ -34,6 +36,7 @@ def test_root():
 
 # ── Examples endpoints ───────────────────────────────────────────────────────
 
+
 def test_list_examples():
     r = client.get("/api/examples")
     assert r.status_code == 200
@@ -47,7 +50,10 @@ def test_get_example_db_migration():
     r = client.get("/api/examples/db-migration")
     assert r.status_code == 200
     body = r.json()
-    assert body["decision"]["title"] == "Migrating user auth database from PostgreSQL to Aurora"
+    assert (
+        body["decision"]["title"]
+        == "Migrating user auth database from PostgreSQL to Aurora"
+    )
     assert len(body["services"]) == 5
     assert len(body["teams"]) == 3
 
@@ -74,57 +80,91 @@ def test_get_example_not_found():
 
 # ── Request validation ───────────────────────────────────────────────────────
 
+
 def test_analyze_rejects_missing_decision_title():
     """Backend should return 422 if required fields are missing."""
-    r = client.post("/api/analyze", json={
-        "services": [{"id": "a", "name": "A", "owner_team": "t", "criticality": "high", "description": "d"}],
-        "dependencies": [],
-        "teams": [{"id": "t", "name": "Team", "owns": ["a"], "size": 5, "focus": "product"}],
-        "decision": {
-            # title is missing
-            "description": "test",
-            "decision_type": "migration",
-            "affected_services": ["a"],
-            "timeline": "weeks",
-            "reversibility": "moderate",
+    r = client.post(
+        "/api/analyze",
+        json={
+            "services": [
+                {
+                    "id": "a",
+                    "name": "A",
+                    "owner_team": "t",
+                    "criticality": "high",
+                    "description": "d",
+                }
+            ],
+            "dependencies": [],
+            "teams": [
+                {
+                    "id": "t",
+                    "name": "Team",
+                    "owns": ["a"],
+                    "size": 5,
+                    "focus": "product",
+                }
+            ],
+            "decision": {
+                # title is missing
+                "description": "test",
+                "decision_type": "migration",
+                "affected_services": ["a"],
+                "timeline": "weeks",
+                "reversibility": "moderate",
+            },
         },
-    })
+    )
     assert r.status_code == 422
 
 
 def test_analyze_rejects_invalid_criticality():
     """Invalid enum value for criticality should return 422."""
-    r = client.post("/api/analyze", json={
-        "services": [{"id": "a", "name": "A", "owner_team": "t", "criticality": "ultra-critical", "description": "d"}],
-        "dependencies": [],
-        "teams": [],
-        "decision": {
-            "title": "Test",
-            "description": "test",
-            "decision_type": "migration",
-            "affected_services": [],
-            "timeline": "weeks",
-            "reversibility": "moderate",
+    r = client.post(
+        "/api/analyze",
+        json={
+            "services": [
+                {
+                    "id": "a",
+                    "name": "A",
+                    "owner_team": "t",
+                    "criticality": "ultra-critical",
+                    "description": "d",
+                }
+            ],
+            "dependencies": [],
+            "teams": [],
+            "decision": {
+                "title": "Test",
+                "description": "test",
+                "decision_type": "migration",
+                "affected_services": [],
+                "timeline": "weeks",
+                "reversibility": "moderate",
+            },
         },
-    })
+    )
     assert r.status_code == 422
 
 
 def test_analyze_rejects_invalid_decision_type():
     """Invalid decision_type enum should return 422."""
-    r = client.post("/api/analyze", json={
-        "services": [],
-        "dependencies": [],
-        "teams": [],
-        "decision": {
-            "title": "Test",
-            "description": "test",
-            "decision_type": "INVALID",
-            "affected_services": [],
-            "timeline": "weeks",
-            "reversibility": "moderate",
+    r = client.post(
+        "/api/analyze",
+        json={
+            "services": [],
+            "dependencies": [],
+            "teams": [],
+            "decision": {
+                "title": "Test",
+                "description": "test",
+                "decision_type": "INVALID",
+                "affected_services": [],
+                "timeline": "weeks",
+                "reversibility": "moderate",
+            },
         },
-    })
+    )
     assert r.status_code == 422
 
 
@@ -207,14 +247,51 @@ MOCK_PASS5 = {
     "overall_verdict": "HIGH",
     "executive_summary": "This migration poses HIGH risk due to undocumented direct DB connections.",
     "risk_dimensions": [
-        {"dimension": "technical", "score": 0.8, "summary": "Hard cutover risk.", "top_risks": ["Schema mismatch"], "mitigations": ["Run schema diff"]},
-        {"dimension": "delivery", "score": 0.6, "summary": "Timeline is tight.", "top_risks": ["Rollback complexity"], "mitigations": ["Blue-green migration"]},
-        {"dimension": "people", "score": 0.4, "summary": "Team is experienced.", "top_risks": ["On-call fatigue"], "mitigations": ["Stagger shifts"]},
-        {"dimension": "compliance", "score": 0.3, "summary": "No compliance blockers.", "top_risks": ["Audit trail gap"], "mitigations": ["Log all migration steps"]},
-        {"dimension": "financial", "score": 0.5, "summary": "Downtime cost moderate.", "top_risks": ["Lost revenue during window"], "mitigations": ["Off-peak window"]},
+        {
+            "dimension": "technical",
+            "score": 0.8,
+            "summary": "Hard cutover risk.",
+            "top_risks": ["Schema mismatch"],
+            "mitigations": ["Run schema diff"],
+        },
+        {
+            "dimension": "delivery",
+            "score": 0.6,
+            "summary": "Timeline is tight.",
+            "top_risks": ["Rollback complexity"],
+            "mitigations": ["Blue-green migration"],
+        },
+        {
+            "dimension": "people",
+            "score": 0.4,
+            "summary": "Team is experienced.",
+            "top_risks": ["On-call fatigue"],
+            "mitigations": ["Stagger shifts"],
+        },
+        {
+            "dimension": "compliance",
+            "score": 0.3,
+            "summary": "No compliance blockers.",
+            "top_risks": ["Audit trail gap"],
+            "mitigations": ["Log all migration steps"],
+        },
+        {
+            "dimension": "financial",
+            "score": 0.5,
+            "summary": "Downtime cost moderate.",
+            "top_risks": ["Lost revenue during window"],
+            "mitigations": ["Off-peak window"],
+        },
     ],
-    "immediate_actions": ["Audit all direct DB connections", "Run schema diff", "Draft rollback plan"],
-    "questions_to_answer": ["Are there undocumented direct DB consumers?", "What is the rollback SLA?"],
+    "immediate_actions": [
+        "Audit all direct DB connections",
+        "Run schema diff",
+        "Draft rollback plan",
+    ],
+    "questions_to_answer": [
+        "Are there undocumented direct DB consumers?",
+        "What is the rollback SLA?",
+    ],
     "confidence_note": "This analysis is grounded in the context you provided. Nodes marked ◈ are inferred.",
 }
 
@@ -244,32 +321,76 @@ def test_analyze_sync_returns_blast_radius_result():
 
     with patch("services.llm_client.complete", side_effect=mock_complete):
         import services.llm_client as lc
+
         lc.reset()
 
-        r = client.post("/api/analyze", json={
-            "services": [
-                {"id": "auth-service", "name": "Authentication Service", "owner_team": "platform", "criticality": "critical", "description": "Auth"},
-                {"id": "api-gateway", "name": "API Gateway", "owner_team": "devex", "criticality": "high", "description": "Gateway"},
-                {"id": "user-profile-service", "name": "User Profile", "owner_team": "product", "criticality": "high", "description": "Profile"},
-            ],
-            "dependencies": [
-                {"from_service": "api-gateway", "to_service": "auth-service", "dependency_type": "sync-api", "strength": "hard"},
-                {"from_service": "auth-service", "to_service": "user-profile-service", "dependency_type": "database", "strength": "hard"},
-            ],
-            "teams": [
-                {"id": "platform", "name": "Platform", "owns": ["auth-service"], "size": 6, "focus": "platform"},
-                {"id": "devex", "name": "DevEx", "owns": ["api-gateway"], "size": 4, "focus": "platform"},
-            ],
-            "decision": {
-                "title": "Migrating auth DB to Aurora",
-                "description": "Hard cutover migration",
-                "decision_type": "migration",
-                "affected_services": ["auth-service"],
-                "timeline": "immediate",
-                "reversibility": "hard",
+        r = client.post(
+            "/api/analyze",
+            json={
+                "services": [
+                    {
+                        "id": "auth-service",
+                        "name": "Authentication Service",
+                        "owner_team": "platform",
+                        "criticality": "critical",
+                        "description": "Auth",
+                    },
+                    {
+                        "id": "api-gateway",
+                        "name": "API Gateway",
+                        "owner_team": "devex",
+                        "criticality": "high",
+                        "description": "Gateway",
+                    },
+                    {
+                        "id": "user-profile-service",
+                        "name": "User Profile",
+                        "owner_team": "product",
+                        "criticality": "high",
+                        "description": "Profile",
+                    },
+                ],
+                "dependencies": [
+                    {
+                        "from_service": "api-gateway",
+                        "to_service": "auth-service",
+                        "dependency_type": "sync-api",
+                        "strength": "hard",
+                    },
+                    {
+                        "from_service": "auth-service",
+                        "to_service": "user-profile-service",
+                        "dependency_type": "database",
+                        "strength": "hard",
+                    },
+                ],
+                "teams": [
+                    {
+                        "id": "platform",
+                        "name": "Platform",
+                        "owns": ["auth-service"],
+                        "size": 6,
+                        "focus": "platform",
+                    },
+                    {
+                        "id": "devex",
+                        "name": "DevEx",
+                        "owns": ["api-gateway"],
+                        "size": 4,
+                        "focus": "platform",
+                    },
+                ],
+                "decision": {
+                    "title": "Migrating auth DB to Aurora",
+                    "description": "Hard cutover migration",
+                    "decision_type": "migration",
+                    "affected_services": ["auth-service"],
+                    "timeline": "immediate",
+                    "reversibility": "hard",
+                },
+                "additional_context": None,
             },
-            "additional_context": None,
-        })
+        )
 
     assert r.status_code == 200, r.text
     body = r.json()
@@ -316,31 +437,61 @@ def test_analyze_stream_emits_sse_events():
     """
     _responses = iter(_PASS_RESPONSES)
 
-    with patch("services.llm_client.complete", side_effect=lambda s, u, **kw: next(_responses)):
+    with patch(
+        "services.llm_client.complete", side_effect=lambda s, u, **kw: next(_responses)
+    ):
         import services.llm_client as lc
+
         lc.reset()
 
-        with client.stream("POST", "/api/analyze/stream", json={
-            "services": [
-                {"id": "svc-a", "name": "Service A", "owner_team": "team-x", "criticality": "high", "description": "d"},
-                {"id": "svc-b", "name": "Service B", "owner_team": "team-x", "criticality": "medium", "description": "d"},
-            ],
-            "dependencies": [
-                {"from_service": "svc-a", "to_service": "svc-b", "dependency_type": "sync-api", "strength": "hard"},
-            ],
-            "teams": [
-                {"id": "team-x", "name": "Team X", "owns": ["svc-a", "svc-b"], "size": 4, "focus": "product"},
-            ],
-            "decision": {
-                "title": "Test decision",
-                "description": "Testing SSE stream",
-                "decision_type": "architecture",
-                "affected_services": ["svc-a"],
-                "timeline": "weeks",
-                "reversibility": "moderate",
+        with client.stream(
+            "POST",
+            "/api/analyze/stream",
+            json={
+                "services": [
+                    {
+                        "id": "svc-a",
+                        "name": "Service A",
+                        "owner_team": "team-x",
+                        "criticality": "high",
+                        "description": "d",
+                    },
+                    {
+                        "id": "svc-b",
+                        "name": "Service B",
+                        "owner_team": "team-x",
+                        "criticality": "medium",
+                        "description": "d",
+                    },
+                ],
+                "dependencies": [
+                    {
+                        "from_service": "svc-a",
+                        "to_service": "svc-b",
+                        "dependency_type": "sync-api",
+                        "strength": "hard",
+                    },
+                ],
+                "teams": [
+                    {
+                        "id": "team-x",
+                        "name": "Team X",
+                        "owns": ["svc-a", "svc-b"],
+                        "size": 4,
+                        "focus": "product",
+                    },
+                ],
+                "decision": {
+                    "title": "Test decision",
+                    "description": "Testing SSE stream",
+                    "decision_type": "architecture",
+                    "affected_services": ["svc-a"],
+                    "timeline": "weeks",
+                    "reversibility": "moderate",
+                },
+                "additional_context": None,
             },
-            "additional_context": None,
-        }) as response:
+        ) as response:
             assert response.status_code == 200
             assert "text/event-stream" in response.headers["content-type"]
 
@@ -365,26 +516,42 @@ def test_analyze_stream_emits_sse_events():
 def test_analyze_sync_returns_502_for_invalid_llm_json():
     with patch("services.llm_client.complete", return_value="not-json"):
         import services.llm_client as lc
+
         lc.reset()
 
-        r = client.post("/api/analyze", json={
-            "services": [
-                {"id": "svc-a", "name": "Service A", "owner_team": "team-x", "criticality": "high", "description": "d"},
-            ],
-            "dependencies": [],
-            "teams": [
-                {"id": "team-x", "name": "Team X", "owns": ["svc-a"], "size": 4, "focus": "product"},
-            ],
-            "decision": {
-                "title": "Test decision",
-                "description": "Testing invalid JSON",
-                "decision_type": "architecture",
-                "affected_services": ["svc-a"],
-                "timeline": "weeks",
-                "reversibility": "moderate",
+        r = client.post(
+            "/api/analyze",
+            json={
+                "services": [
+                    {
+                        "id": "svc-a",
+                        "name": "Service A",
+                        "owner_team": "team-x",
+                        "criticality": "high",
+                        "description": "d",
+                    },
+                ],
+                "dependencies": [],
+                "teams": [
+                    {
+                        "id": "team-x",
+                        "name": "Team X",
+                        "owns": ["svc-a"],
+                        "size": 4,
+                        "focus": "product",
+                    },
+                ],
+                "decision": {
+                    "title": "Test decision",
+                    "description": "Testing invalid JSON",
+                    "decision_type": "architecture",
+                    "affected_services": ["svc-a"],
+                    "timeline": "weeks",
+                    "reversibility": "moderate",
+                },
+                "additional_context": None,
             },
-            "additional_context": None,
-        })
+        )
 
     assert r.status_code == 502
     assert "invalid JSON" in r.json()["detail"]
@@ -393,26 +560,43 @@ def test_analyze_sync_returns_502_for_invalid_llm_json():
 def test_analyze_stream_hides_internal_error_details():
     with patch("services.llm_client.complete", return_value="not-json"):
         import services.llm_client as lc
+
         lc.reset()
 
-        with client.stream("POST", "/api/analyze/stream", json={
-            "services": [
-                {"id": "svc-a", "name": "Service A", "owner_team": "team-x", "criticality": "high", "description": "d"},
-            ],
-            "dependencies": [],
-            "teams": [
-                {"id": "team-x", "name": "Team X", "owns": ["svc-a"], "size": 4, "focus": "product"},
-            ],
-            "decision": {
-                "title": "Test decision",
-                "description": "Testing invalid JSON",
-                "decision_type": "architecture",
-                "affected_services": ["svc-a"],
-                "timeline": "weeks",
-                "reversibility": "moderate",
+        with client.stream(
+            "POST",
+            "/api/analyze/stream",
+            json={
+                "services": [
+                    {
+                        "id": "svc-a",
+                        "name": "Service A",
+                        "owner_team": "team-x",
+                        "criticality": "high",
+                        "description": "d",
+                    },
+                ],
+                "dependencies": [],
+                "teams": [
+                    {
+                        "id": "team-x",
+                        "name": "Team X",
+                        "owns": ["svc-a"],
+                        "size": 4,
+                        "focus": "product",
+                    },
+                ],
+                "decision": {
+                    "title": "Test decision",
+                    "description": "Testing invalid JSON",
+                    "decision_type": "architecture",
+                    "affected_services": ["svc-a"],
+                    "timeline": "weeks",
+                    "reversibility": "moderate",
+                },
+                "additional_context": None,
             },
-            "additional_context": None,
-        }) as response:
+        ) as response:
             assert response.status_code == 200
 
             error_event = None
@@ -440,21 +624,30 @@ def test_analyze_rejects_too_many_services():
         for index in range(201)
     ]
 
-    r = client.post("/api/analyze", json={
-        "services": services,
-        "dependencies": [],
-        "teams": [
-            {"id": "team-x", "name": "Team X", "owns": [], "size": 4, "focus": "product"},
-        ],
-        "decision": {
-            "title": "Test",
-            "description": "test",
-            "decision_type": "migration",
-            "affected_services": ["svc-0"],
-            "timeline": "weeks",
-            "reversibility": "moderate",
+    r = client.post(
+        "/api/analyze",
+        json={
+            "services": services,
+            "dependencies": [],
+            "teams": [
+                {
+                    "id": "team-x",
+                    "name": "Team X",
+                    "owns": [],
+                    "size": 4,
+                    "focus": "product",
+                },
+            ],
+            "decision": {
+                "title": "Test",
+                "description": "test",
+                "decision_type": "migration",
+                "affected_services": ["svc-0"],
+                "timeline": "weeks",
+                "reversibility": "moderate",
+            },
         },
-    })
+    )
 
     assert r.status_code == 422
 
@@ -479,26 +672,42 @@ def test_analyze_sync_returns_502_for_llm_timeout():
 
     with patch("services.llm_client._executor.submit", return_value=TimeoutFuture()):
         import services.llm_client as lc
+
         lc.reset()
 
-        r = client.post("/api/analyze", json={
-            "services": [
-                {"id": "svc-a", "name": "Service A", "owner_team": "team-x", "criticality": "high", "description": "d"},
-            ],
-            "dependencies": [],
-            "teams": [
-                {"id": "team-x", "name": "Team X", "owns": ["svc-a"], "size": 4, "focus": "product"},
-            ],
-            "decision": {
-                "title": "Test decision",
-                "description": "Testing timeout handling",
-                "decision_type": "architecture",
-                "affected_services": ["svc-a"],
-                "timeline": "weeks",
-                "reversibility": "moderate",
+        r = client.post(
+            "/api/analyze",
+            json={
+                "services": [
+                    {
+                        "id": "svc-a",
+                        "name": "Service A",
+                        "owner_team": "team-x",
+                        "criticality": "high",
+                        "description": "d",
+                    },
+                ],
+                "dependencies": [],
+                "teams": [
+                    {
+                        "id": "team-x",
+                        "name": "Team X",
+                        "owns": ["svc-a"],
+                        "size": 4,
+                        "focus": "product",
+                    },
+                ],
+                "decision": {
+                    "title": "Test decision",
+                    "description": "Testing timeout handling",
+                    "decision_type": "architecture",
+                    "affected_services": ["svc-a"],
+                    "timeline": "weeks",
+                    "reversibility": "moderate",
+                },
+                "additional_context": None,
             },
-            "additional_context": None,
-        })
+        )
 
     assert r.status_code == 502
     assert "timeout" in r.json()["detail"].lower()

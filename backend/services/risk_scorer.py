@@ -1,4 +1,5 @@
 """Pass 5 — Risk Scoring and Synthesis"""
+
 import logging
 
 from models.analysis import BlastRadiusResult, ImpactNode, ImpactEdge, RiskDimension
@@ -35,7 +36,9 @@ def score_and_synthesize(
         try:
             risk_dims.append(RiskDimension(**rd))
         except Exception:
-            logger.warning("Skipping invalid risk dimension payload: %s", rd, exc_info=True)
+            logger.warning(
+                "Skipping invalid risk dimension payload: %s", rd, exc_info=True
+            )
 
     overall_risk_score = synthesis.get("overall_risk_score", 0.5)
     try:
