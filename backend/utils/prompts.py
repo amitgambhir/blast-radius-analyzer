@@ -63,9 +63,17 @@ Analyze the direct (1-hop) technical impacts on services immediately connected t
 NetworkX graph traversal has already computed which services are 1 hop away. You are reasoning about the specific impact on each."""
 
 
+def _trim_svc(s: dict, desc_limit: int = 300) -> dict:
+    """Return a service dict with description trimmed for prompt efficiency."""
+    if not s.get("description") or len(s["description"]) <= desc_limit:
+        return s
+    return {**s, "description": s["description"][:desc_limit] + "…"}
+
+
 def pass2_user(req: dict, pass1: dict, first_order_svcs: list, graph_data: dict) -> str:
     affected = req["decision"]["affected_services"]
-    affected_details = [s for s in req["services"] if s["id"] in affected]
+    affected_details = [_trim_svc(s) for s in req["services"] if s["id"] in affected]
+    first_order_svcs = [_trim_svc(s) for s in first_order_svcs]
     relevant_deps = [
         d for d in req["dependencies"]
         if d["from_service"] in affected or d["to_service"] in affected
@@ -145,6 +153,17 @@ def pass3_user(req: dict, pass1: dict, pass2: dict, second_order_svcs: list) -> 
         for i in (pass2.get("directly_affected_impacts", []) + pass2.get("first_order_impacts", []))
         if i.get("risk_severity") in ("critical", "high")
     ]
+    second_order_svcs = [_trim_svc(s) for s in second_order_svcs]
+    second_order_ids = {s["id"] for s in second_order_svcs}
+    first_order_ids = {
+        i["id"]
+        for i in (pass2.get("directly_affected_impacts", []) + pass2.get("first_order_impacts", []))
+    }
+    relevant_ids = second_order_ids | first_order_ids
+    relevant_deps = [
+        d for d in req["dependencies"]
+        if d["from_service"] in relevant_ids or d["to_service"] in relevant_ids
+    ]
     return f"""Analyze second-order impact propagation.
 
 PASS 1: {pass1.get('decision_class')} — {pass1.get('primary_risk_category')} risk
@@ -155,8 +174,8 @@ PASS 2 SUMMARY: {pass2.get('pass2_summary', '')}
 SECOND-ORDER SERVICES (2-hop, computed by NetworkX):
 {_j(second_order_svcs)}
 
-ALL DEPENDENCIES:
-{_j(req['dependencies'])}
+RELEVANT DEPENDENCIES (involving first- or second-order services):
+{_j(relevant_deps)}
 
 DECISION: {req['decision']['title']}
 TIMELINE: {req['decision']['timeline']}

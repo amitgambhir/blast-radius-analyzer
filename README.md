@@ -931,7 +931,7 @@ The backend prints a warning at startup if the required API key for the selected
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LLM_TIMEOUT_SECONDS` | `120` | Max seconds to wait for a single model call. Returns 502 to the client if exceeded. Minimum 1. |
+| `LLM_TIMEOUT_SECONDS` | `180` | Max seconds to wait for a single model call. Returns 502 to the client if exceeded. Minimum 1. |
 | `MAX_REQUEST_BYTES` | `262144` | Max request body size in bytes (256 KB). Returns 413 if exceeded. |
 | `CORS_ALLOW_ORIGINS` | `http://localhost:3001, http://localhost:5173, http://localhost:3000` | Comma-separated list of allowed frontend origins. |
 | `VITE_API_URL` | *(Vite proxy)* | Frontend API base URL. Leave unset in local dev (Vite proxies to `:8000`). Set for Docker or any non-localhost deployment. |
